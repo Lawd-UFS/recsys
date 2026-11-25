@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Sistemas de recomendação: a matemática em movimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=MuseoModerno:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff;--fg:#1d1622;--muted:#716a7a;--line:#ece7f0;--soft:#f6f3f8;
+  --k:#b000ff;--t1:rgba(176,0,255,.06);--t2:rgba(176,0,255,.14);--t3:rgba(176,0,255,.32);--neg:#c3bccb;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:#fff;scroll-behavior:smooth}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'MuseoModerno',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.55;font-size:16px;font-variant-numeric:tabular-nums}
+.k{color:var(--k)}
+mjx-container .k{color:var(--k)}
+main{max-width:1100px;margin:0 auto;padding:64px 22px 96px}
+header h1{font-weight:600;font-size:clamp(32px,5.4vw,54px);line-height:1.04;margin:0 0 16px;letter-spacing:-.015em;max-width:15ch}
+header p{color:var(--muted);max-width:62ch;margin:0}
+.notation{margin-top:28px;padding:16px 18px;border-left:3px solid var(--k);background:var(--t1);border-radius:0 10px 10px 0;max-width:760px}
+.notation p{margin:0 0 4px;color:var(--fg)}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+nav a{font-size:14px;text-decoration:none;color:var(--fg);border:1px solid var(--line);padding:5px 14px;border-radius:999px;transition:border-color .2s,color .2s}
+nav a:hover,nav a:focus-visible{border-color:var(--k);color:var(--k);outline:none}
+section{padding-top:56px;margin-top:64px;border-top:1px solid var(--line)}
+.sh{display:flex;align-items:baseline;gap:14px}
+.num{font-size:15px;color:var(--k);font-weight:600}
+h2{font-weight:600;font-size:clamp(24px,3.2vw,34px);margin:0;line-height:1.15}
+.lead{max-width:68ch;margin:10px 0 28px}
+.demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:32px;align-items:start}
+@media (max-width:880px){.demo{grid-template-columns:1fr}}
+ol.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+ol.steps li{border:1px solid var(--line);border-radius:12px;padding:10px 14px 6px;transition:border-color .4s,background .4s,opacity .4s;opacity:.5}
+ol.steps li.on{border-color:var(--k);background:var(--t1);opacity:1}
+.st{font-size:14px;font-weight:600;color:var(--muted)}
+ol.steps li.on .st{color:var(--k)}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;margin:.35em 0 !important;max-width:100%;padding:2px 0}
+.note{font-size:14px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.stage{min-width:0}
+.play{font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:var(--k);border:2px solid var(--k);border-radius:999px;padding:7px 20px;cursor:pointer;margin-bottom:16px;transition:background .2s,color .2s}
+.play.alt{background:#fff;color:var(--k)}
+.play:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.scroll{overflow-x:auto;padding-bottom:4px}
+table.m{border-collapse:separate;border-spacing:3px;font-size:13px}
+table.m th{font-weight:500;color:var(--muted);font-size:12px;padding:2px 4px;white-space:nowrap}
+table.m th.rh{text-align:left;padding-right:8px;color:var(--fg);font-size:13px}
+td.c{min-width:46px;height:34px;text-align:center;border-radius:7px;background:var(--soft);transition:background .35s,color .35s,box-shadow .35s,opacity .35s}
+td.c.e{color:#c9c2d0}
+td.x{min-width:58px;text-align:center;font-size:13px;color:var(--muted)}
+tr.dim td.c,tr.dim th{opacity:.3}
+tr.tgt td.c{background:var(--t2)}
+tr.cmp td.c{background:var(--t1)}
+td.c.co{background:var(--t3)!important;color:var(--fg)}
+td.c.q{box-shadow:inset 0 0 0 2px var(--k);color:var(--k);font-weight:600;animation:pulse 1.2s ease-in-out infinite}
+td.c.done{background:var(--k)!important;color:#fff;animation:none}
+tr.nb th.rh{color:var(--k);font-weight:600}
+@keyframes pulse{50%{box-shadow:inset 0 0 0 4px var(--t3)}}
+.sim{display:flex;align-items:center;gap:6px;min-width:110px}
+.sim i{display:block;height:8px;border-radius:4px;background:var(--k);transition:width .5s;width:0}
+.sim i.n{background:var(--neg)}
+.sim span{font-size:12px;width:40px;text-align:right}
+.calc{margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--soft);font-size:14px;min-height:72px;line-height:1.7;overflow-x:auto}
+.calc b{color:var(--k);font-weight:600}
+.calc sub{font-size:.75em}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--k)}
+/* perfil CBF */
+.prof{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:18px;height:150px;position:relative}
+.prof::after{content:"";position:absolute;left:0;right:0;top:60px;border-top:1px solid var(--line)}
+.pb{position:relative;height:120px}
+.pb i{position:absolute;left:20%;right:20%;background:var(--k);border-radius:4px;transition:all .6s cubic-bezier(.2,.8,.2,1);top:60px;height:0}
+.pb i.n{background:var(--neg)}
+.pb span{position:absolute;bottom:-28px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
+.pb em{position:absolute;top:-2px;left:0;right:0;text-align:center;font-size:11px;font-style:normal;color:var(--fg)}
+.cap{font-size:13px;color:var(--muted);margin:6px 0 0}
+/* MF */
+.mfgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:560px){.mfgrid{grid-template-columns:1fr}}
+.panel h4{margin:0 0 6px;font-size:13px;font-weight:500;color:var(--muted)}
+svg text{font-family:'MuseoModerno',system-ui,sans-serif}
+td.c.miss{box-shadow:inset 0 0 0 2px var(--k)}
+td.c.hit{outline:2px solid var(--fg);outline-offset:1px}
+.mfmeta{display:flex;gap:18px;font-size:13px;color:var(--muted);margin:8px 0 0;flex-wrap:wrap}
+.mfmeta b{color:var(--fg);font-weight:600}
+/* ranking */
+.rank{position:relative}
+.rr{position:absolute;left:0;right:0;top:0;height:30px;display:grid;grid-template-columns:100px 1fr 46px;align-items:center;gap:10px;transition:transform .8s cubic-bezier(.2,.8,.2,1);font-size:14px}
+.rb{height:12px;background:var(--soft);border-radius:6px;display:flex;overflow:hidden}
+.rb i{background:var(--k);transition:width .7s;width:0}
+.rb b{background:var(--t3);transition:width .7s;width:0}
+.rv{text-align:right;font-size:13px}
+.rr.top .rn{color:var(--k);font-weight:600}
+/* contexto */
+.ctxtop{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.tensor{position:relative;width:120px;height:92px;flex:none}
+.slice{position:absolute;width:84px;height:60px;border:1.5px solid var(--line);border-radius:6px;background:#fff;transition:all .5s;display:grid;grid-template-columns:repeat(6,1fr);gap:2px;padding:5px}
+.slice i{background:var(--soft);border-radius:2px}
+.slice.on{border-color:var(--k);background:var(--t1)}
+.slice.on i{background:var(--t2)}
+.ctxname{font-size:20px;font-weight:600;color:var(--k);min-height:30px;transition:opacity .3s}
+.wbars{display:flex;gap:14px;align-items:flex-end;height:70px;margin-top:6px}
+.wb{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted);width:68px}
+.wb i{display:block;width:22px;background:var(--k);border-radius:4px 4px 0 0;transition:height .6s;height:0}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
+.legend span::before{content:"";display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--k)}
+.legend span.b::before{background:var(--t3)}
+.hyb{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.nbig{font-size:30px;font-weight:600;line-height:1}
+.nbig small{font-size:14px;color:var(--muted);font-weight:400;display:block;margin-top:4px}
+footer{margin-top:72px;color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],macros:{hl:['\\class{k}{#1}',1]}},svg:{fontCache:'global'}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js" defer></script>
+</head>
+<body>
+<main>
+<header>
+  <h1>Sistemas de recomendação em movimento</h1>
+  <p>Cinco abordagens, um mesmo conjunto de dados: 5 usuários, 6 filmes, notas de 1 a 5. Cada demonstração roda sozinha e acende, à esquerda, a equação da etapa que está sendo executada.</p>
+  <div class="notation">
+    <p>\(R\in\mathbb{R}^{m\times n}\) é a matriz de notas, quase toda vazia. \(\Omega=\{(u,i): r_{ui}\ \text{observado}\}\).</p>
+    <p>Recomendar é estimar \(\hl{\hat r_{ui}}\) para todo \((u,i)\notin\Omega\) e ordenar os itens por esse valor.</p>
+  </div>
+  <nav>
+    <a href="#cf">Colaborativa</a><a href="#cbf">Por conteúdo</a><a href="#mf">Fatoração de matrizes</a><a href="#ctx">Sensível ao contexto</a><a href="#hib">Híbrido</a>
+  </nav>
+</header>
+
+<section id="cf">
+  <div class="sh"><span class="num">01</span><h2>Filtragem colaborativa (CF)</h2></div>
+  <p class="lead">Usa apenas \(R\). Hipótese: quem concordou no passado concorda no futuro. A nota prevista de <span class="k">Ana</span> para um filme vem dos <span class="k">vizinhos</span> mais parecidos com ela, corrigida pela tendência de cada um a dar notas altas ou baixas.</p>
+  <div class="demo">
+    <ol class="steps" id="cf-steps">
+      <li><div class="st">1. Média de cada usuário</div>\[\hl{\bar r_u}=\frac{1}{|I_u|}\sum_{i\in I_u} r_{ui}\]</li>
+      <li><div class="st">2. Similaridade de Pearson nos itens co-avaliados \(I_{uv}\)</div>\[\hl{\mathrm{sim}(u,v)}=\frac{\sum_{j\in I_{uv}}(r_{uj}-\bar r_u)(r_{vj}-\bar r_v)}{\sqrt{\sum_{j\in I_{uv}}(r_{uj}-\bar r_u)^2}\,\sqrt{\sum_{j\in I_{uv}}(r_{vj}-\bar r_v)^2}}\]</li>
+      <li><div class="st">3. Vizinhança: os \(k\) mais similares que avaliaram \(i\)</div>\[\hl{N_k(u;i)}=\text{top-}k\ \{v: (v,i)\in\Omega\}\ \text{por}\ \mathrm{sim}(u,v)\]</li>
+      <li><div class="st">4. Predição: média + desvios ponderados</div>\[\hl{\hat r_{ui}}=\bar r_u+\frac{\sum_{v\in N_k}\mathrm{sim}(u,v)\,(r_{vi}-\bar r_v)}{\sum_{v\in N_k}|\mathrm{sim}(u,v)|}\]</li>
+    </ol>
+    <div class="stage">
+      <div class="scroll"><table class="m" id="cf-t"></table></div>
+      <div class="calc" id="cf-c"></div>
+      <p class="note">Limite: um filme que ninguém avaliou não tem coluna preenchida, logo não tem vizinhos. É o <span class="k">cold start</span> de item.</p>
+    </div>
+  </div>
+</section>
+
+<section id="cbf">
+  <div class="sh"><span class="num">02</span><h2>Filtragem por conteúdo (CBF)</h2></div>
+  <p class="lead">Ignora os outros usuários. Cada filme vira um <span class="k">vetor de atributos</span> \(x_i\) (aqui, gêneros) e cada usuário vira um <span class="k">perfil</span> \(p_u\) no mesmo espaço, somando os filmes que viu com peso positivo se gostou e negativo se não gostou.</p>
+  <div class="demo">
+    <ol class="steps" id="cbf-steps">
+      <li><div class="st">1. Itens como vetores normalizados</div>\[\hl{\tilde x_i}=\frac{x_i}{\lVert x_i\rVert},\qquad x_i\in\{0,1\}^{|G|}\]</li>
+      <li><div class="st">2. Perfil do usuário</div>\[\hl{p_u}=\sum_{i\in I_u}(r_{ui}-\bar r_u)\,\tilde x_i\]</li>
+      <li><div class="st">3. Score por cosseno</div>\[\hl{s(u,i)}=\cos(p_u,\tilde x_i)=\frac{p_u^{\top}\tilde x_i}{\lVert p_u\rVert}\]</li>
+      <li><div class="st">4. Ranking dos não vistos</div>\[\mathrm{rec}(u)=\operatorname{argsort}_{\,i\notin I_u}\ \hl{s(u,i)}\]</li>
+    </ol>
+    <div class="stage">
+      <div class="scroll"><table class="m" id="cbf-t"></table></div>
+      <div class="prof" id="cbf-p"></div>
+      <p class="cap" style="margin-top:34px">Perfil \(p_{\text{Ana}}\) por gênero</p>
+      <div class="calc" id="cbf-c"></div>
+    </div>
+  </div>
+</section>
+
+<section id="mf">
+  <div class="sh"><span class="num">03</span><h2>Fatoração de matrizes (MF)</h2></div>
+  <p class="lead">CF baseada em modelo. Supõe que \(R\) tem <span class="k">posto baixo</span>: cada usuário e cada item são descritos por \(k\) fatores latentes, e a nota é o produto interno entre eles. Aqui \(k=2\), então dá para ver usuários e filmes se organizando num plano enquanto o <span class="k">SGD</span> minimiza o erro.</p>
+  <div class="demo">
+    <ol class="steps" id="mf-steps">
+      <li><div class="st">1. Modelo</div>\[\hl{\hat r_{ui}}=\mu+b_u+b_i+p_u^{\top}q_i,\qquad p_u,q_i\in\mathbb{R}^{k}\]</li>
+      <li><div class="st">2. Perda regularizada, só sobre \(\Omega\)</div>\[\hl{\mathcal{L}}=\sum_{(u,i)\in\Omega}(r_{ui}-\hat r_{ui})^2+\lambda\big(b_u^2+b_i^2+\lVert p_u\rVert^2+\lVert q_i\rVert^2\big)\]</li>
+      <li><div class="st">3. SGD: uma amostra \((u,i)\in\Omega\) por vez</div>\[\hl{e_{ui}}=r_{ui}-\hat r_{ui}\]\[\begin{aligned}b_u&\leftarrow b_u+\eta\,(e_{ui}-\lambda b_u)\\ b_i&\leftarrow b_i+\eta\,(e_{ui}-\lambda b_i)\\ p_u&\leftarrow p_u+\eta\,(e_{ui}\,q_i-\lambda p_u)\\ q_i&\leftarrow q_i+\eta\,(e_{ui}\,p_u-\lambda q_i)\end{aligned}\]</li>
+      <li><div class="st">4. Completar a matriz</div>\[\hl{\hat R}=PQ^{\top}+\text{vieses},\qquad \operatorname{posto}(PQ^{\top})\le k\]</li>
+    </ol>
+    <div class="stage">
+      <div class="mfgrid">
+        <div class="panel"><h4>\(R\) observado</h4><div class="scroll"><table class="m" id="mf-r"></table></div></div>
+        <div class="panel"><h4>\(\hat R\) do modelo</h4><div class="scroll"><table class="m" id="mf-h"></table></div></div>
+        <div class="panel"><h4>Espaço latente: \(p_u\) (círculos) e \(q_i\) (quadrados)</h4><svg id="mf-s" viewBox="0 0 300 300" width="100%" style="max-width:320px"></svg></div>
+        <div class="panel"><h4>RMSE em \(\Omega\) por época</h4><svg id="mf-l" viewBox="0 0 300 170" width="100%" style="max-width:320px"></svg>
+          <div class="mfmeta"><span>época <b id="mf-ep">0</b></span><span>RMSE <b id="mf-rm">–</b></span><span>\(\eta=0{,}05\ \ \lambda=0{,}05\)</span></div></div>
+      </div>
+      <div class="calc" id="mf-c"></div>
+    </div>
+  </div>
+</section>
+
+<section id="ctx">
+  <div class="sh"><span class="num">04</span><h2>Recomendação sensível ao contexto</h2></div>
+  <p class="lead">A mesma pessoa quer coisas diferentes em situações diferentes. O contexto \(c\) (hora, companhia, dispositivo) vira uma terceira dimensão: a matriz vira um <span class="k">tensor</span>, e o contexto ganha seu próprio vetor latente \(w_c\) que reescala os fatores. A alternativa mais simples, <span class="k">pré-filtragem</span>, treina uma MF separada em cada fatia \(R_{::c}\), ao custo de dividir os dados.</p>
+  <div class="demo">
+    <ol class="steps" id="ctx-steps">
+      <li><div class="st">1. Dados em tensor</div>\[\hl{R}\in\mathbb{R}^{m\times n\times |C|},\qquad r_{uic}\]</li>
+      <li><div class="st">2. Fatoração CP (três vias)</div>\[\hl{\hat r_{uic}}=\sum_{f=1}^{k}p_{uf}\,q_{if}\,w_{cf}=\big\langle p_u,\ q_i\odot w_c\big\rangle\]</li>
+      <li><div class="st">3. Ranking condicionado ao contexto</div>\[\mathrm{rec}(u,c)=\operatorname{argsort}_{\,i}\ \hl{\hat r_{uic}}\]</li>
+    </ol>
+    <div class="stage">
+      <div class="ctxtop">
+        <div class="tensor" id="ctx-tn"></div>
+        <div>
+          <div class="ctxname" id="ctx-n"></div>
+          <div class="wbars" id="ctx-w"></div>
+        </div>
+      </div>
+      <div class="rank" id="ctx-r"></div>
+      <div class="calc" id="ctx-c"></div>
+      <p class="note">\(p_{\text{Ana}}=(1{,}0;\ 0{,}5;\ 0{,}6)\). Os rótulos f₁ ação, f₂ infantil, f₃ emoção são ilustrativos: fatores aprendidos não têm nome.</p>
+    </div>
+  </div>
+</section>
+
+<section id="hib">
+  <div class="sh"><span class="num">05</span><h2>Modelo híbrido (CF + CBF)</h2></div>
+  <p class="lead">CF é forte com histórico e inútil sem ele. CBF funciona desde a primeira interação, mas só recomenda o que se parece com o que já foi visto. O híbrido ponderado desloca o peso de um para o outro conforme o usuário acumula interações \(n_u\).</p>
+  <div class="demo">
+    <div>
+      <ol class="steps" id="hib-steps">
+        <li><div class="st">1. Peso adaptativo (\(\beta=5\))</div>\[\hl{\alpha_u}=\frac{n_u}{n_u+\beta}\]</li>
+        <li><div class="st">2. Combinação convexa, scores em \([0,1]\)</div>\[\hl{\hat r_{ui}}=\alpha_u\,\hat r^{\,\mathrm{CF}}_{ui}+(1-\alpha_u)\,\hat r^{\,\mathrm{CBF}}_{ui}\]</li>
+      </ol>
+      <div class="note">Híbrido dentro do modelo (estilo LightFM): o embedding do item é a soma dos embeddings dos seus atributos, \[q_i=\sum_{g\in G(i)}e_g,\qquad \hat r_{ui}=p_u^{\top}q_i\] Um filme novo já nasce com \(q_i\), resolvendo o cold start de item dentro da própria MF.</div>
+    </div>
+    <div class="stage">
+      <div class="hyb">
+        <div class="nbig" id="hib-n">0<small>interações de um usuário novo</small></div>
+        <svg id="hib-s" viewBox="0 0 260 120" width="260" style="max-width:100%"></svg>
+      </div>
+      <div class="legend"><span>\(\alpha\,\hat r^{\mathrm{CF}}\)</span><span class="b">\((1-\alpha)\,\hat r^{\mathrm{CBF}}\)</span></div>
+      <div class="rank" id="hib-r"></div>
+      <div class="calc" id="hib-c"></div>
+    </div>
+  </div>
+</section>
+
+<footer>Todos os números são calculados ao vivo pela página a partir da matriz de exemplo.</footer>
+</main>
+
+<script>
+const films=['Duna','Matrix','Interestelar','Toy Story','Up','Titanic'];
+const users=['Ana','Bia','Caio','Duda','Enzo'];
+const R=[[5,5,0,1,0,2],[4,5,5,1,2,1],[1,1,2,5,5,4],[5,4,4,0,1,0],[2,0,1,4,5,5]];
+const fx=(x,d=2)=>{const s=x.toFixed(d).replace('.',',');return s==='-0,00'?'0,00':s};
+const sgn=x=>x<0?'− '+fx(-x):fx(x);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const vis=new Map();
+const io=new IntersectionObserver(es=>es.forEach(e=>vis.set(e.target,e.isIntersecting)),{threshold:.12});
+const paused=new Map();
+async function wait(ms,sec){await sleep(ms);while(!vis.get(sec)||paused.get(sec))await sleep(200);}
+function player(sec,run){
+  const b=mk('button','play','▶ Iniciar');b.type='button';sec.querySelector('.stage').prepend(b);let running=false;
+  b.onclick=async()=>{
+    if(!running){running=true;paused.set(sec,false);b.textContent='❚❚ Pausar';b.classList.add('alt');await run();running=false;b.textContent='↻ Repetir';b.classList.remove('alt');}
+    else{const p=!paused.get(sec);paused.set(sec,p);b.textContent=p?'▶ Continuar':'❚❚ Pausar';b.classList.toggle('alt',!p);}
+  };
+}
+function setStep(ol,i){[...ol.children].forEach((li,j)=>li.classList.toggle('on',j===i));}
+function mk(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+const mean=u=>{const v=R[u].filter(x=>x>0);return v.reduce((a,b)=>a+b,0)/v.length};
+const sub=(a,b)=>`${a}<sub>${b}</sub>`;
+
+function buildMatrix(table,rowNames,colNames,extra=[]){
+  table.innerHTML='';
+  const hr=mk('tr');hr.appendChild(mk('th'));
+  colNames.forEach(c=>hr.appendChild(mk('th',null,c)));
+  extra.forEach(c=>hr.appendChild(mk('th',null,c)));
+  table.appendChild(hr);
+  const cells=[],rows=[],ex=[];
+  rowNames.forEach(rn=>{
+    const tr=mk('tr');tr.appendChild(mk('th','rh',rn));
+    const rc=colNames.map(()=>{const td=mk('td','c');tr.appendChild(td);return td});
+    const xc=extra.map(()=>{const td=mk('td','x');tr.appendChild(td);return td});
+    table.appendChild(tr);cells.push(rc);rows.push(tr);ex.push(xc);
+  });
+  return {cells,rows,ex};
+}
+
+function makeRank(box,names,rowH=36){
+  box.style.height=names.length*rowH+'px';
+  const rows=names.map((n,i)=>{const r=mk('div','rr',`<span class="rn">${n}</span><span class="rb"><i></i><b></b></span><span class="rv">–</span>`);r.style.transform=`translateY(${i*rowH}px)`;box.appendChild(r);return r});
+  return {rows,update(total,a,b,max){
+    const order=total.map((_,i)=>i).sort((x,y)=>total[y]-total[x]);
+    order.forEach((idx,k)=>{rows[idx].style.transform=`translateY(${k*rowH}px)`;rows[idx].classList.toggle('top',k===0)});
+    rows.forEach((r,i)=>{r.querySelector('i').style.width=Math.max(0,a[i]/max*100)+'%';r.querySelector('b').style.width=Math.max(0,b[i]/max*100)+'%';r.querySelector('.rv').textContent=fx(total[i])});
+    return order;
+  }};
+}
+
+/* ---------- 01 CF ---------- */
+(function(){
+  const sec=document.getElementById('cf'),ol=document.getElementById('cf-steps'),calc=document.getElementById('cf-c');
+  const T=buildMatrix(document.getElementById('cf-t'),users,films,['r̄','sim(Ana, v)']);
+  function pear(u,v){const mu=mean(u),mv=mean(v);let n=0,a=0,b=0;const co=[];
+    for(let j=0;j<6;j++)if(R[u][j]&&R[v][j]){co.push(j);const x=R[u][j]-mu,y=R[v][j]-mv;n+=x*y;a+=x*x;b+=y*y}
+    return {s:n/Math.sqrt(a*b),n,a:Math.sqrt(a),b:Math.sqrt(b),co}}
+  function reset(){
+    T.rows.forEach((tr,u)=>{tr.className='';T.cells[u].forEach((td,i)=>{td.className='c'+(R[u][i]?'':' e');td.textContent=R[u][i]||'·'});T.ex[u][0].textContent='';T.ex[u][1].innerHTML='<div class="sim"><i></i><span></span></div>'});
+  }
+  async function run(u,i){
+    reset();calc.innerHTML='';
+    T.rows[u].classList.add('tgt');const q=T.cells[u][i];q.classList.add('q');q.textContent='?';
+    setStep(ol,0);
+    for(let v=0;v<5;v++){T.ex[v][0].textContent=fx(mean(v));}
+    calc.innerHTML=`Alvo: ${sub('r̂','Ana, '+films[i])}. Médias calculadas só sobre as notas existentes. ${sub('r̄','Ana')} = (${R[u].filter(x=>x).join(' + ')}) / ${R[u].filter(x=>x).length} = <b>${fx(mean(u))}</b>`;
+    await wait(2600,sec);
+    setStep(ol,1);
+    const sims={};
+    for(let v=0;v<5;v++){if(v===u)continue;
+      const p=pear(u,v);sims[v]=p.s;
+      T.rows[v].classList.add('cmp');p.co.forEach(j=>{T.cells[u][j].classList.add('co');T.cells[v][j].classList.add('co')});
+      const bar=T.ex[v][1].querySelector('i');bar.style.width=Math.abs(p.s)*60+'px';bar.classList.toggle('n',p.s<0);
+      T.ex[v][1].querySelector('span').textContent=fx(p.s);
+      calc.innerHTML=`${sub('I','Ana,'+users[v])} = {${p.co.map(j=>films[j]).join(', ')}}<br>sim(Ana, ${users[v]}) = ${sgn(p.n)} / (${fx(p.a)} · ${fx(p.b)}) = <b>${fx(p.s)}</b>`;
+      await wait(2100,sec);
+      T.rows[v].classList.remove('cmp');p.co.forEach(j=>{T.cells[u][j].classList.remove('co');T.cells[v][j].classList.remove('co')});
+    }
+    setStep(ol,2);
+    const cand=[0,1,2,3,4].filter(v=>v!==u&&R[v][i]).sort((a,b)=>sims[b]-sims[a]);const nb=cand.slice(0,2);
+    T.rows.forEach((tr,v)=>{if(v!==u&&!nb.includes(v))tr.classList.add('dim')});
+    nb.forEach(v=>{T.rows[v].classList.add('nb');T.cells[v][i].classList.add('co')});
+    calc.innerHTML=`Avaliaram ${films[i]}: ${cand.map(v=>`${users[v]} (${fx(sims[v])})`).join(', ')}<br>${sub('N','2')}(Ana; ${films[i]}) = <b>{${nb.map(v=>users[v]).join(', ')}}</b>`;
+    await wait(2600,sec);
+    setStep(ol,3);
+    let num=0,den=0;nb.forEach(v=>{num+=sims[v]*(R[v][i]-mean(v));den+=Math.abs(sims[v])});
+    const pr=Math.min(5,Math.max(1,mean(u)+num/den));
+    calc.innerHTML=`${sub('r̂','Ana, '+films[i])} = ${fx(mean(u))} + [${nb.map(v=>`${fx(sims[v])}·(${R[v][i]} − ${fx(mean(v))})`).join(' + ')}] / (${nb.map(v=>fx(Math.abs(sims[v]))).join(' + ')})<br>= ${fx(mean(u))} ${num/den<0?'−':'+'} ${fx(Math.abs(num/den))} = <b>${fx(pr)}</b>`;
+    q.classList.remove('q');q.classList.add('done');q.textContent=fx(pr,1);
+    await wait(4200,sec);
+  }
+  io.observe(sec);
+  reset();
+  player(sec,async()=>{await run(0,2);await run(0,4)});
+})();
+
+/* ---------- 02 CBF ---------- */
+(function(){
+  const sec=document.getElementById('cbf'),ol=document.getElementById('cbf-steps'),calc=document.getElementById('cbf-c');
+  const G=['ação','ficção','animação','romance','drama'];
+  const X=[[1,1,0,0,1],[1,1,0,0,0],[0,1,0,0,1],[0,0,1,0,0],[0,0,1,1,1],[0,0,0,1,1]];
+  const Xn=X.map(x=>{const n=Math.sqrt(x.reduce((a,b)=>a+b,0));return x.map(v=>v/n)});
+  const u=0,ru=R[u],mu=mean(u);
+  const T=buildMatrix(document.getElementById('cbf-t'),films,G,['r<sub>Ana</sub>','peso','s(Ana, i)']);
+  const prof=document.getElementById('cbf-p');
+  const bars=G.map(g=>{const b=mk('div','pb',`<i></i><em></em><span>${g}</span>`);prof.appendChild(b);return b});
+  const SC=2.6;
+  function drawP(p){bars.forEach((b,j)=>{const i=b.querySelector('i'),h=Math.min(60,Math.abs(p[j])/SC*60);
+    i.style.height=h+'px';i.style.top=(p[j]>=0?60-h:60)+'px';i.classList.toggle('n',p[j]<0);b.querySelector('em').textContent=fx(p[j]);b.querySelector('em').style.top=(p[j]>=0?60-h-18:60+h+2)+'px'})}
+  function reset(){
+    T.rows.forEach((tr,i)=>{tr.className='';T.cells[i].forEach((td,j)=>{td.className='c'+(X[i][j]?'':' e');td.innerHTML=X[i][j]?'<span class="dot"></span>':'·'});
+      T.ex[i][0].textContent=ru[i]||'·';T.ex[i][1].textContent='';T.ex[i][2].textContent=''});
+    drawP([0,0,0,0,0]);
+  }
+  async function run(){
+    reset();setStep(ol,0);
+    calc.innerHTML=`Cada linha é \u00a0x<sub>i</sub> ∈ {0,1}<sup>5</sup>. Dividir pela norma impede que filmes com muitos gêneros pesem mais.`;
+    await wait(1800,sec);
+    T.rows.forEach((tr,i)=>T.cells[i].forEach((td,j)=>{if(X[i][j]){td.textContent=fx(Xn[i][j]);td.classList.add('co')}}));
+    calc.innerHTML=`x̃<sub>Duna</sub> = (1, 1, 0, 0, 1) / √3 = (0,58; 0,58; 0; 0; 0,58)<br>x̃<sub>Matrix</sub> = (1, 1, 0, 0, 0) / √2 = (0,71; 0,71; 0; 0; 0)`;
+    await wait(3000,sec);
+    T.rows.forEach((tr,i)=>T.cells[i].forEach(td=>td.classList.remove('co')));
+    setStep(ol,1);
+    const p=[0,0,0,0,0];
+    for(let i=0;i<6;i++){if(!ru[i])continue;
+      const w=ru[i]-mu;T.rows[i].classList.add('tgt');T.ex[i][1].textContent=sgn(w);
+      Xn[i].forEach((v,j)=>p[j]+=w*v);drawP(p);
+      calc.innerHTML=`${sub('r̄','Ana')} = ${fx(mu)} → peso = ${ru[i]} − ${fx(mu)} = <b>${sgn(w)}</b><br>p ← p ${w<0?'−':'+'} ${fx(Math.abs(w))} · x̃<sub>${films[i]}</sub> = (${p.map(fx).join('; ')})`;
+      await wait(2200,sec);T.rows[i].classList.remove('tgt');
+    }
+    setStep(ol,2);
+    const np=Math.sqrt(p.reduce((a,b)=>a+b*b,0));const s=[];
+    for(let i=0;i<6;i++){const dot=p.reduce((a,v,j)=>a+v*Xn[i][j],0);s[i]=dot/np;}
+    for(let i=0;i<6;i++){if(ru[i]){T.rows[i].classList.add('dim');continue}
+      const dot=p.reduce((a,v,j)=>a+v*Xn[i][j],0);
+      T.rows[i].classList.add('cmp');T.ex[i][2].innerHTML=`<b class="k">${fx(s[i])}</b>`;
+      calc.innerHTML=`‖p‖ = ${fx(np)}<br>s(Ana, ${films[i]}) = p·x̃ / ‖p‖ = ${sgn(dot)} / ${fx(np)} = <b>${fx(s[i])}</b>`;
+      await wait(2600,sec);T.rows[i].classList.remove('cmp');
+    }
+    setStep(ol,3);
+    const cand=[0,1,2,3,4,5].filter(i=>!ru[i]).sort((a,b)=>s[b]-s[a]);
+    T.rows[cand[0]].classList.add('tgt');
+    calc.innerHTML=`Ranking: ${cand.map((i,k)=>k===0?`<b>${films[i]} (${fx(s[i])})</b>`:`${films[i]} (${fx(s[i])})`).join(' &gt; ')}<br>O perfil é positivo em ação e ficção e negativo em animação: Up perde mesmo sem ninguém mais na conta.`;
+    await wait(4500,sec);
+  }
+  io.observe(sec);
+  reset();
+  player(sec,run);
+})();
+
+/* ---------- 03 MF ---------- */
+(function(){
+  const sec=document.getElementById('mf'),ol=document.getElementById('mf-steps'),calc=document.getElementById('mf-c');
+  const sh=['Dun','Mat','Int','Toy','Up','Tit'];
+  const TR=buildMatrix(document.getElementById('mf-r'),users,sh),TH=buildMatrix(document.getElementById('mf-h'),users,sh);
+  const S=document.getElementById('mf-s'),L=document.getElementById('mf-l'),EP=document.getElementById('mf-ep'),RM=document.getElementById('mf-rm');
+  const obs=[];R.forEach((r,u)=>r.forEach((x,i)=>x&&obs.push([u,i])));
+  const mu=obs.reduce((a,[u,i])=>a+R[u][i],0)/obs.length;
+  const eta=.05,lam=.05,K=2,EPOCHS=150;
+  const NS='http://www.w3.org/2000/svg';
+  const svg=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  let rand,P,Q,bu,bi,hist;
+  function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  const gauss=()=>Math.sqrt(-2*Math.log(rand()+1e-9))*Math.cos(2*Math.PI*rand());
+  const pred=(u,i)=>mu+bu[u]+bi[i]+P[u][0]*Q[i][0]+P[u][1]*Q[i][1];
+  const rmse=()=>Math.sqrt(obs.reduce((a,[u,i])=>a+(R[u][i]-pred(u,i))**2,0)/obs.length);
+  function step(u,i){const r=pred(u,i),e=R[u][i]-r;bu[u]+=eta*(e-lam*bu[u]);bi[i]+=eta*(e-lam*bi[i]);
+    for(let f=0;f<K;f++){const p=P[u][f],q=Q[i][f];P[u][f]+=eta*(e*q-lam*p);Q[i][f]+=eta*(e*p-lam*q)}return {r,e}}
+  TR.cells.forEach((row,u)=>row.forEach((td,i)=>{td.className='c'+(R[u][i]?'':' e');td.textContent=R[u][i]||'·';if(R[u][i])td.style.background=`rgba(176,0,255,${(R[u][i]-1)/4*.75+.05})`;if(R[u][i]>=4)td.style.color='#fff'}));
+  // scatter base
+  const LIM=2,sc=v=>150+v/LIM*130;
+  S.appendChild(svg('line',{x1:20,y1:150,x2:280,y2:150,stroke:'#ece7f0'}));S.appendChild(svg('line',{x1:150,y1:20,x2:150,y2:280,stroke:'#ece7f0'}));
+  S.appendChild(svg('text',{x:276,y:144,'font-size':11,fill:'#716a7a','text-anchor':'end'},)).textContent='fator 1';
+  S.appendChild(svg('text',{x:156,y:30,'font-size':11,fill:'#716a7a'})).textContent='fator 2';
+  const uN=users.map(n=>{const g=svg('g',{});g.appendChild(svg('circle',{r:6,fill:'#b000ff'}));const t=svg('text',{x:9,y:4,'font-size':11,fill:'#1d1622'});t.textContent=n;g.appendChild(t);g.style.transition='transform .12s linear';S.appendChild(g);return g});
+  const iN=films.map((n,i)=>{const g=svg('g',{});g.appendChild(svg('rect',{x:-5,y:-5,width:10,height:10,rx:2,fill:'#fff',stroke:'#b000ff','stroke-width':2}));const t=svg('text',{x:9,y:4,'font-size':11,fill:'#716a7a'});t.textContent=sh[i];g.appendChild(t);g.style.transition='transform .12s linear';S.appendChild(g);return g});
+  // loss base
+  L.appendChild(svg('line',{x1:30,y1:150,x2:290,y2:150,stroke:'#ece7f0'}));L.appendChild(svg('line',{x1:30,y1:10,x2:30,y2:150,stroke:'#ece7f0'}));
+  const YMAX=1.8,lx=e=>30+e/EPOCHS*260,ly=v=>150-Math.min(v,YMAX)/YMAX*140;
+  [0.5,1,1.5].forEach(v=>{const t=svg('text',{x:24,y:ly(v)+4,'font-size':10,fill:'#716a7a','text-anchor':'end'});t.textContent=fx(v,1);L.appendChild(t);L.appendChild(svg('line',{x1:30,y1:ly(v),x2:290,y2:ly(v),stroke:'#f6f3f8'}))});
+  const poly=svg('polyline',{fill:'none',stroke:'#b000ff','stroke-width':2.2,'stroke-linejoin':'round'});L.appendChild(poly);
+  const ldot=svg('circle',{r:4,fill:'#b000ff'});L.appendChild(ldot);
+  function draw(hit){
+    TH.cells.forEach((row,u)=>row.forEach((td,i)=>{const v=Math.max(1,Math.min(5,pred(u,i)));td.textContent=fx(v,1);
+      td.style.background=`rgba(176,0,255,${(v-1)/4*.75+.05})`;td.style.color=v>=4?'#fff':'#1d1622';td.classList.toggle('hit',!!hit&&hit[0]===u&&hit[1]===i)}));
+    TR.cells.forEach((row,u)=>row.forEach((td,i)=>td.classList.toggle('hit',!!hit&&hit[0]===u&&hit[1]===i)));
+    uN.forEach((g,u)=>g.style.transform=`translate(${sc(P[u][0])}px,${sc(-P[u][1])}px)`);
+    iN.forEach((g,i)=>g.style.transform=`translate(${sc(Q[i][0])}px,${sc(-Q[i][1])}px)`);
+    poly.setAttribute('points',hist.map((v,e)=>`${lx(e)},${ly(v)}`).join(' '));
+    const e=hist.length-1;ldot.setAttribute('cx',lx(e));ldot.setAttribute('cy',ly(hist[e]));
+    EP.textContent=e;RM.textContent=fx(hist[e],3);
+  }
+  const vec=v=>`(${v.map(x=>fx(x)).join('; ')})`;
+  let seed=7;
+  async function run(){
+    rand=rng(seed++);P=users.map(()=>[gauss()*.1,gauss()*.1]);Q=films.map(()=>[gauss()*.1,gauss()*.1]);bu=users.map(()=>0);bi=films.map(()=>0);
+    hist=[rmse()];
+    TH.cells.forEach(row=>row.forEach(td=>td.classList.remove('miss')));
+    draw();
+    setStep(ol,0);
+    calc.innerHTML=`μ = média de Ω = ${fx(mu)}. Vieses começam em 0 e p, q ~ N(0; 0,1²): toda predição começa perto de μ, e os pontos latentes, perto da origem.`;
+    await wait(3200,sec);
+    setStep(ol,1);
+    calc.innerHTML=`|Ω| = ${obs.length} notas conhecidas de ${5*6}. A perda ignora as ${30-obs.length} células vazias. RMSE inicial = <b>${fx(hist[0],3)}</b>`;
+    await wait(3000,sec);
+    setStep(ol,2);
+    for(let s=0;s<5;s++){
+      const [u,i]=obs[Math.floor(rand()*obs.length)];
+      const pu=[...P[u]],qi=[...Q[i]];
+      const {r,e}=step(u,i);draw([u,i]);
+      calc.innerHTML=`Amostra (${users[u]}, ${films[i]}): r = ${R[u][i]}, r̂ = ${fx(r)}, <b>e = ${sgn(e)}</b><br>p<sub>${users[u]}</sub>: ${vec(pu)} → ${vec(P[u])}<br>q<sub>${films[i]}</sub>: ${vec(qi)} → ${vec(Q[i])}`;
+      await wait(2300,sec);
+    }
+    // completa a época corrente e roda as demais rápido
+    for(let ep=1;ep<=EPOCHS;ep++){
+      const o=[...obs];for(let a=o.length-1;a>0;a--){const b=Math.floor(rand()*(a+1));[o[a],o[b]]=[o[b],o[a]]}
+      let last;o.forEach(([u,i])=>{last=[u,i,step(u,i).e]});
+      hist.push(rmse());draw();
+      calc.innerHTML=`Época ${ep}: ${obs.length} atualizações em ordem aleatória. Última: (${users[last[0]]}, ${films[last[1]]}), e = ${sgn(last[2])}<br>Usuários com gostos parecidos se aproximam no plano; cada item aponta na direção de quem o avalia bem.`;
+      await wait(ep<40?110:60,sec);
+    }
+    draw();
+    setStep(ol,3);
+    TH.cells.forEach((row,u)=>row.forEach((td,i)=>{if(!R[u][i])td.classList.add('miss')}));
+    const miss=[];R.forEach((r,u)=>r.forEach((x,i)=>!x&&miss.push(`${users[u]}·${sh[i]} ${fx(Math.max(1,Math.min(5,pred(u,i))),1)}`)));
+    calc.innerHTML=`Células contornadas = predições para (u,i) ∉ Ω: ${miss.join(', ')}.<br>r̂<sub>Ana, Interestelar</sub> = ${fx(mu)} ${bu[0]<0?'−':'+'} ${fx(Math.abs(bu[0]))} ${bi[2]<0?'−':'+'} ${fx(Math.abs(bi[2]))} + ${vec(P[0])}·${vec(Q[2])} = <b>${fx(pred(0,2))}</b>`;
+    await wait(6500,sec);
+  }
+  io.observe(sec);
+  rand=rng(1);P=users.map(()=>[0,0]);Q=films.map(()=>[0,0]);bu=users.map(()=>0);bi=films.map(()=>0);hist=[rmse()];draw();
+  player(sec,run);
+})();
+
+/* ---------- 04 Contexto ---------- */
+(function(){
+  const sec=document.getElementById('ctx'),ol=document.getElementById('ctx-steps'),calc=document.getElementById('ctx-c');
+  const p=[1.0,0.5,0.6];
+  const Q=[[0.9,0,0.4],[1.0,0,0.1],[0.7,0.1,0.8],[0.1,1.0,0.5],[0.1,0.9,0.9],[0.2,0,1.0]];
+  const C=[{n:'Sexta, 23h, sozinha',w:[1.3,0.1,0.8]},{n:'Domingo, 15h, com crianças',w:[0.3,1.6,0.6]},{n:'Sábado, 21h, a dois',w:[0.5,0.1,1.5]}];
+  const tn=document.getElementById('ctx-tn');
+  const slices=C.map((c,k)=>{const s=mk('div','slice');for(let j=0;j<30;j++)s.appendChild(mk('i'));s.style.left=(k*16)+'px';s.style.top=(k*14)+'px';s.style.zIndex=3-k;tn.appendChild(s);return s});
+  const wb=document.getElementById('ctx-w');const fl=['f₁ ação','f₂ infantil','f₃ emoção'];
+  const wbars=fl.map(f=>{const b=mk('div','wb',`<span class="wv">–</span><i></i><span>${f}</span>`);wb.appendChild(b);return b});
+  const nm=document.getElementById('ctx-n');
+  const rk=makeRank(document.getElementById('ctx-r'),films);
+  io.observe(sec);
+  player(sec,async()=>{for(let k=0;k<3;k++){const c=C[k];
+      setStep(ol,0);slices.forEach((s,j)=>s.classList.toggle('on',j===k%3));
+      nm.style.opacity=0;await sleep(250);nm.textContent=c.n;nm.style.opacity=1;
+      calc.innerHTML=`Fatia c = “${c.n}” do tensor: as notas de todos os usuários e filmes nesse contexto.`;
+      await wait(1800,sec);
+      setStep(ol,1);
+      wbars.forEach((b,f)=>{b.querySelector('i').style.height=c.w[f]/1.6*44+'px';b.querySelector('.wv').textContent=fx(c.w[f],1)});
+      const s=Q.map(q=>q.reduce((a,v,f)=>a+p[f]*v*c.w[f],0));
+      const best=s.indexOf(Math.max(...s));
+      calc.innerHTML=`w<sub>c</sub> = (${c.w.map(v=>fx(v,1)).join('; ')})<br>r̂<sub>Ana, ${films[best]}, c</sub> = ${Q[best].map((q,f)=>`${fx(p[f],1)}·${fx(q,1)}·${fx(c.w[f],1)}`).join(' + ')} = <b>${fx(s[best])}</b>`;
+      await wait(2600,sec);
+      setStep(ol,2);
+      rk.update(s,s,s.map(()=>0),1.4);
+      await wait(3800,sec);
+    }});
+})();
+
+/* ---------- 05 Híbrido ---------- */
+(function(){
+  const sec=document.getElementById('hib'),ol=document.getElementById('hib-steps'),calc=document.getElementById('hib-c');
+  const CF=[.55,.62,.91,.20,.74,.35],CB=[.88,.80,.45,.15,.30,.52],beta=5,NMAX=40;
+  const S=document.getElementById('hib-s'),NS='http://www.w3.org/2000/svg';
+  const svg=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  const X=n=>30+n/NMAX*220,Y=a=>100-a*85;
+  S.appendChild(svg('line',{x1:30,y1:100,x2:252,y2:100,stroke:'#ece7f0'}));S.appendChild(svg('line',{x1:30,y1:12,x2:30,y2:100,stroke:'#ece7f0'}));
+  const pts=[];for(let n=0;n<=NMAX;n+=.5)pts.push(`${X(n)},${Y(n/(n+beta))}`);
+  S.appendChild(svg('polyline',{points:pts.join(' '),fill:'none',stroke:'#b000ff','stroke-width':2}));
+  [['0',30,113],[String(NMAX),250,113]].forEach(([t,x,y])=>{const e=svg('text',{x,y,'font-size':10,fill:'#716a7a','text-anchor':'middle'});e.textContent=t;S.appendChild(e)});
+  [['1',24,Y(1)+4],['0',24,104]].forEach(([t,x,y])=>{const e=svg('text',{x,y,'font-size':10,fill:'#716a7a','text-anchor':'end'});e.textContent=t;S.appendChild(e)});
+  const lab=svg('text',{x:140,y:113,'font-size':10,fill:'#716a7a','text-anchor':'middle'});lab.textContent='n';S.appendChild(lab);
+  const dot=svg('circle',{r:5,fill:'#b000ff'});dot.style.transition='cx .8s, cy .8s';S.appendChild(dot);
+  const dl=svg('text',{'font-size':11,fill:'#1d1622'});S.appendChild(dl);
+  const rk=makeRank(document.getElementById('hib-r'),films);
+  const nEl=document.getElementById('hib-n');
+  const seq=[0,1,3,5,10,20,40];
+  io.observe(sec);
+  player(sec,async()=>{
+    {for(const n of seq){
+      const a=n/(n+beta);
+      setStep(ol,0);
+      nEl.firstChild.textContent=n;
+      dot.setAttribute('cx',X(n));dot.setAttribute('cy',Y(a));dl.setAttribute('x',Math.min(X(n)+8,220));dl.setAttribute('y',Y(a)-8);dl.textContent='α = '+fx(a);
+      calc.innerHTML=`n = ${n} → α = ${n} / (${n} + ${beta}) = <b>${fx(a)}</b>${n===0?'<br>Sem histórico não existe vizinhança: o ranking é 100% conteúdo.':''}`;
+      await wait(1500,sec);
+      setStep(ol,1);
+      const A=CF.map(v=>a*v),B=CB.map(v=>(1-a)*v),T=A.map((v,i)=>v+B[i]);
+      const order=rk.update(T,A,B,1);const t=order[0];
+      calc.innerHTML=`n = ${n}, α = ${fx(a)}<br>r̂<sub>${films[t]}</sub> = ${fx(a)}·${fx(CF[t])} + ${fx(1-a)}·${fx(CB[t])} = <b>${fx(T[t])}</b>${n>=20?'<br>Com histórico, o CF assume e traz Interestelar e Up, que o conteúdo sozinho subestimava.':''}`;
+      await wait(n===0||n===NMAX?4200:2800,sec);
+    }}});
+})();
+</script>
+</body>
+</html>
