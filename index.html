@@ -43,6 +43,9 @@ ol.steps li.on .st{color:var(--k)}
 mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;margin:.35em 0 !important;max-width:100%;padding:2px 0}
 .note{font-size:14px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .stage{min-width:0}
+.sub{margin-top:56px;padding-top:40px;border-top:1px dashed var(--line)}
+.sub h3{font-weight:600;font-size:clamp(20px,2.6vw,27px);margin:0;line-height:1.2}
+#emb-r{transition:opacity .5s}
 .play{font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:var(--k);border:2px solid var(--k);border-radius:999px;padding:7px 20px;cursor:pointer;margin-bottom:16px;transition:background .2s,color .2s}
 .play.alt{background:#fff;color:var(--k)}
 .play:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
@@ -130,7 +133,7 @@ window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],macr
     <p>Recomendar é estimar \(\hl{\hat r_{ui}}\) para todo \((u,i)\notin\Omega\) e ordenar os itens por esse valor.</p>
   </div>
   <nav>
-    <a href="#cf">Colaborativa</a><a href="#cbf">Por conteúdo</a><a href="#mf">Fatoração de matrizes</a><a href="#ctx">Sensível ao contexto</a><a href="#hib">Híbrido</a>
+    <a href="#cf">Colaborativa</a><a href="#cbf">Por conteúdo</a><a href="#mf">Fatoração de matrizes</a><a href="#emb">Embeddings</a><a href="#ctx">Sensível ao contexto</a><a href="#hib">Híbrido</a>
   </nav>
 </header>
 
@@ -173,13 +176,13 @@ window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],macr
 
 <section id="mf">
   <div class="sh"><span class="num">03</span><h2>Fatoração de matrizes (MF)</h2></div>
-  <p class="lead">CF baseada em modelo. Supõe que \(R\) tem <span class="k">posto baixo</span>: cada usuário e cada item são descritos por \(k\) fatores latentes, e a nota é o produto interno entre eles. Aqui \(k=2\), então dá para ver usuários e filmes se organizando num plano enquanto o <span class="k">SGD</span> minimiza o erro.</p>
+  <p class="lead">CF baseada em modelo. Supõe que \(R\) é <span class="k">low rank</span>: cada usuário e cada item são descritos por \(k\) fatores latentes, e a nota é o produto interno entre eles. Aqui \(k=2\), então dá para ver usuários e filmes se organizando num plano enquanto o <span class="k">SGD</span> minimiza o erro.</p>
   <div class="demo">
     <ol class="steps" id="mf-steps">
       <li><div class="st">1. Modelo</div>\[\hl{\hat r_{ui}}=\mu+b_u+b_i+p_u^{\top}q_i,\qquad p_u,q_i\in\mathbb{R}^{k}\]</li>
       <li><div class="st">2. Perda regularizada, só sobre \(\Omega\)</div>\[\hl{\mathcal{L}}=\sum_{(u,i)\in\Omega}(r_{ui}-\hat r_{ui})^2+\lambda\big(b_u^2+b_i^2+\lVert p_u\rVert^2+\lVert q_i\rVert^2\big)\]</li>
       <li><div class="st">3. SGD: uma amostra \((u,i)\in\Omega\) por vez</div>\[\hl{e_{ui}}=r_{ui}-\hat r_{ui}\]\[\begin{aligned}b_u&\leftarrow b_u+\eta\,(e_{ui}-\lambda b_u)\\ b_i&\leftarrow b_i+\eta\,(e_{ui}-\lambda b_i)\\ p_u&\leftarrow p_u+\eta\,(e_{ui}\,q_i-\lambda p_u)\\ q_i&\leftarrow q_i+\eta\,(e_{ui}\,p_u-\lambda q_i)\end{aligned}\]</li>
-      <li><div class="st">4. Completar a matriz</div>\[\hl{\hat R}=PQ^{\top}+\text{vieses},\qquad \operatorname{posto}(PQ^{\top})\le k\]</li>
+      <li><div class="st">4. Completar a matriz</div>\[\hl{\hat R}=PQ^{\top}+\text{vieses},\qquad \operatorname{rank}(PQ^{\top})\le k\]</li>
     </ol>
     <div class="stage">
       <div class="mfgrid">
@@ -190,6 +193,31 @@ window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],macr
           <div class="mfmeta"><span>época <b id="mf-ep">0</b></span><span>RMSE <b id="mf-rm">–</b></span><span>\(\eta=0{,}05\ \ \lambda=0{,}05\)</span></div></div>
       </div>
       <div class="calc" id="mf-c"></div>
+    </div>
+  </div>
+  <div class="sub" id="emb">
+    <h3>Embeddings</h3>
+    <p class="lead">Um <span class="k">embedding</span> é um vetor denso e aprendido que representa uma entidade (usuário, item, contexto, atributo) num espaço onde a geometria tem significado: vetores próximos pertencem a entidades com comportamento parecido. Os \(p_u\) e \(q_i\) acima são exatamente isso. A pergunta “quem é parecido com quem” vira uma operação geométrica, e a medida escolhida muda a resposta.</p>
+    <div class="demo">
+      <div>
+        <ol class="steps" id="emb-steps">
+          <li><div class="st">1. Criação: lookup numa tabela</div>\[\hl{p_u}=E^{\top}\mathbf{1}_u=E_{u,:},\qquad E\in\mathbb{R}^{m\times k}\]</li>
+          <li><div class="st">2. Aprendizado: init aleatória + gradiente</div>\[E^{(0)}\sim\mathcal N(0,\sigma^2),\qquad \hl{\nabla_{p_u}\mathcal L}=-2\,e_{ui}\,q_i+2\lambda\,p_u\]</li>
+          <li><div class="st">3. Distância euclidiana</div>\[\hl{d(a,b)}=\lVert a-b\rVert_2=\sqrt{\textstyle\sum_f (a_f-b_f)^2}\]</li>
+          <li><div class="st">4. Dot product</div>\[\hl{a^{\top}b}=\sum_f a_f\,b_f=\lVert a\rVert\,\lVert b\rVert\cos\theta\]</li>
+          <li><div class="st">5. Cosine similarity</div>\[\hl{\cos\theta}=\frac{a^{\top}b}{\lVert a\rVert\,\lVert b\rVert},\qquad \lVert\hat a-\hat b\rVert^2=2(1-\cos\theta)\]</li>
+          <li><div class="st">6. Retrieval: top-k por produto interno (MIPS)</div>\[\mathrm{rec}(u)=\text{top-}k_{\,i}\ \hl{p_u^{\top}q_i}\]</li>
+        </ol>
+        <p class="note">O dot product carrega a norma, que em MF tende a refletir popularidade e confiança; é o score que o modelo foi treinado para produzir. O cosseno ignora a norma e mede só direção, o que serve para “itens parecidos com este”. Com vetores L2-normalizados, euclidiana e cosseno geram o mesmo ranking.</p>
+      </div>
+      <div class="stage">
+        <div class="mfgrid">
+          <div class="panel"><h4>Tabela de embeddings \(E\) dos usuários</h4><div class="scroll"><table class="m" id="emb-t"></table></div><div class="calc" id="emb-o" style="min-height:0">&nbsp;</div></div>
+          <div class="panel"><h4>Espaço \(\mathbb{R}^2\): usuários (círculos) e itens (quadrados)</h4><svg id="emb-s" viewBox="0 0 300 300" width="100%" style="max-width:320px"></svg></div>
+        </div>
+        <div class="rank" id="emb-r" style="margin-top:16px"></div>
+        <div class="calc" id="emb-c"></div>
+      </div>
     </div>
   </div>
 </section>
@@ -474,6 +502,83 @@ function makeRank(box,names,rowH=36){
   }
   io.observe(sec);
   rand=rng(1);P=users.map(()=>[0,0]);Q=films.map(()=>[0,0]);bu=users.map(()=>0);bi=films.map(()=>0);hist=[rmse()];draw();
+  player(sec,run);
+})();
+
+/* ---------- 03b Embeddings ---------- */
+(function(){
+  const sec=document.getElementById('emb'),ol=document.getElementById('emb-steps'),calc=document.getElementById('emb-c');
+  const PU=[[-0.89,0.76],[-1.3,0.17],[0.83,-1.23],[-0.67,1.34],[1.54,-0.19]];
+  const QI=[[-0.53,1.3],[-1.42,0.47],[-1.3,0.16],[0.91,-1.33],[0.95,-0.82],[1.36,-0.06]];
+  const sh=['Dun','Mat','Int','Toy','Up','Tit'];
+  const T=buildMatrix(document.getElementById('emb-t'),users,['1<sub>u</sub>','f₁','f₂']);
+  const out=document.getElementById('emb-o'),rbox=document.getElementById('emb-r');
+  const S=document.getElementById('emb-s'),NS='http://www.w3.org/2000/svg';
+  const svg=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+  const LIM=2,X=v=>150+v/LIM*130,Y=v=>150-v/LIM*130;
+  S.appendChild(svg('line',{x1:20,y1:150,x2:280,y2:150,stroke:'#ece7f0'}));S.appendChild(svg('line',{x1:150,y1:20,x2:150,y2:280,stroke:'#ece7f0'}));
+  const ov=svg('g',{});S.appendChild(ov);
+  const mkNode=(n,user)=>{const g=svg('g',{});g.appendChild(user?svg('circle',{r:6,fill:'#b000ff'}):svg('rect',{x:-5,y:-5,width:10,height:10,rx:2,fill:'#fff',stroke:'#b000ff','stroke-width':2}));const t=svg('text',{x:9,y:4,'font-size':11,fill:user?'#1d1622':'#716a7a'});t.textContent=n;g.appendChild(t);g.style.transition='opacity .4s';S.appendChild(g);return g};
+  const uN=users.map(n=>mkNode(n,true)),iN=sh.map(n=>mkNode(n,false));
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1],nrm=a=>Math.hypot(a[0],a[1]);
+  const vec=v=>`(${v.map(x=>fx(x)).join('; ')})`;
+  const O=[0,0];
+  let pu,qi;
+  function place(){uN.forEach((g,u)=>g.setAttribute('transform',`translate(${X(pu[u][0])},${Y(pu[u][1])})`));iN.forEach((g,i)=>g.setAttribute('transform',`translate(${X(qi[i][0])},${Y(qi[i][1])})`));
+    T.cells.forEach((row,u)=>{row[1].textContent=fx(pu[u][0]);row[2].textContent=fx(pu[u][1])});}
+  const focus=nodes=>[...uN,...iN].forEach(g=>g.style.opacity=!nodes||nodes.includes(g)?1:.22);
+  function seg(a,b,dash){ov.appendChild(svg('line',{x1:X(a[0]),y1:Y(a[1]),x2:X(b[0]),y2:Y(b[1]),stroke:'#b000ff','stroke-width':2,'stroke-dasharray':dash||'none'}))}
+  function arc(a,b){const t1=Math.atan2(a[1],a[0]);let d=Math.atan2(b[1],b[0])-t1;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;const r=30;
+    const x1=150+r*Math.cos(t1),y1=150-r*Math.sin(t1),x2=150+r*Math.cos(t1+d),y2=150-r*Math.sin(t1+d);
+    ov.appendChild(svg('path',{d:`M${x1},${y1} A${r},${r} 0 0 ${d>0?0:1} ${x2},${y2}`,fill:'none',stroke:'#b000ff','stroke-width':2}));
+    const tm=t1+d/2,t=svg('text',{x:150+(r+13)*Math.cos(tm),y:150-(r+13)*Math.sin(tm)+4,'font-size':13,fill:'#b000ff','text-anchor':'middle'});t.textContent='θ';ov.appendChild(t);}
+  const rk=makeRank(rbox,films);
+  const small=()=>[(Math.random()-.5)*.3,(Math.random()-.5)*.3];
+  function reset(){ov.innerHTML='';pu=PU.map(small);qi=QI.map(small);rbox.style.opacity=.25;
+    T.rows.forEach(tr=>tr.className='');T.cells.forEach(row=>{row[0].textContent='0';row.forEach(td=>td.className='c')});out.innerHTML='&nbsp;';place();focus();}
+  async function run(){
+    reset();calc.innerHTML='';
+    setStep(ol,0);
+    for(const u of [0,2]){
+      T.cells.forEach((row,v)=>{row[0].textContent=v===u?'1':'0';row[0].classList.toggle('co',v===u);T.rows[v].classList.toggle('dim',v!==u)});
+      T.rows[u].classList.add('tgt');focus([uN[u]]);
+      out.innerHTML=`p<sub>${users[u]}</sub> = Eᵀ1<sub>${users[u]}</sub> = linha ${u+1} de E = <b>${vec(pu[u])}</b>`;
+      calc.innerHTML=`Multiplicar por um one-hot só seleciona uma linha de E. Por isso a camada é um lookup (nn.Embedding), não uma matmul. Os valores ainda são a inicialização aleatória, todos perto da origem.`;
+      await wait(3000,sec);T.rows[u].classList.remove('tgt');
+    }
+    T.rows.forEach(tr=>tr.className='');T.cells.forEach(row=>row[0].classList.remove('co'));focus();out.innerHTML='&nbsp;';
+    setStep(ol,1);
+    const p0=pu.map(v=>[...v]),q0=qi.map(v=>[...v]);
+    calc.innerHTML=`Cada passo de SGD move só as linhas usadas: p<sub>u</sub> vai na direção de q<sub>i</sub> quando e<sub>ui</sub> &gt; 0 e para longe quando e<sub>ui</sub> &lt; 0. Posições finais = SGD da animação acima, com seed fixa.`;
+    for(let f=1;f<=45;f++){const t=1-Math.pow(1-f/45,3);
+      pu=p0.map((v,u)=>[v[0]+(PU[u][0]-v[0])*t,v[1]+(PU[u][1]-v[1])*t]);qi=q0.map((v,i)=>[v[0]+(QI[i][0]-v[0])*t,v[1]+(QI[i][1]-v[1])*t]);place();await wait(70,sec);}
+    pu=PU;qi=QI;place();
+    await wait(2600,sec);
+    const pairs=[[0,3],[0,2]];
+    setStep(ol,2);
+    for(const [a,b] of pairs){ov.innerHTML='';focus([uN[a],uN[b]]);const A=pu[a],B=pu[b];seg(A,B,'5 4');
+      const d=Math.hypot(A[0]-B[0],A[1]-B[1]);
+      calc.innerHTML=`d(${users[a]}, ${users[b]}) = √[(${fx(A[0])} − ${fx(B[0])})² + (${fx(A[1])} − ${fx(B[1])})²] = <b>${fx(d)}</b>`;
+      await wait(3000,sec);}
+    for(const [a,b] of pairs){ov.innerHTML='';focus([uN[a],uN[b]]);const A=pu[a],B=pu[b];seg(O,A);seg(O,B);
+      setStep(ol,3);
+      const dp=dot(A,B);
+      calc.innerHTML=`a<sup>⊤</sup>b = ${fx(A[0])}·${fx(B[0])} + ${fx(A[1])}·${fx(B[1])} = <b>${fx(dp)}</b><br>‖${users[a]}‖ = ${fx(nrm(A))}, ‖${users[b]}‖ = ${fx(nrm(B))}`;
+      await wait(3000,sec);
+      setStep(ol,4);arc(A,B);
+      const c=dp/(nrm(A)*nrm(B));
+      calc.innerHTML=`cos θ = ${fx(dp)} / (${fx(nrm(A))} · ${fx(nrm(B))}) = <b>${fx(c)}</b>, θ = ${Math.round(Math.acos(Math.max(-1,Math.min(1,c)))*180/Math.PI)}°<br>Normalizando: ‖â − b̂‖² = 2(1 − ${fx(c)}) = ${fx(2*(1-c))}`;
+      await wait(3600,sec);}
+    setStep(ol,5);ov.innerHTML='';focus([uN[0],...iN]);rbox.style.opacity=1;
+    const A=pu[0];seg(O,A);
+    const s=qi.map(q=>dot(A,q));
+    qi.forEach((q,i)=>ov.appendChild(svg('line',{x1:X(A[0]),y1:Y(A[1]),x2:X(q[0]),y2:Y(q[1]),stroke:'#b000ff','stroke-opacity':Math.max(.08,s[i]/2),'stroke-width':1.5})));
+    const order=rk.update(s,s,s.map(()=>0),2);
+    calc.innerHTML=`Score = p<sub>Ana</sub><sup>⊤</sup>q<sub>i</sub> para todos os itens, custo O(nk). Melhor: <b>${films[order[0]]} (${fx(s[order[0]])})</b>.<br>Itens no semiplano oposto ao de Ana têm score negativo. Em produção: filtrar já vistos e usar índice ANN (FAISS, ScaNN).`;
+    await wait(5000,sec);
+  }
+  io.observe(sec);
+  reset();
   player(sec,run);
 })();
 
